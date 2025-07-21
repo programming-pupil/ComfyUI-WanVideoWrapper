@@ -53,11 +53,13 @@ def apply_rope_comfy_chunked(xq, xk, freqs_cis, num_chunks=4):
         
         slices = [slice(None)] * len(xq.shape)
         slices[seq_dim] = slice(start_idx, end_idx)
-        
-        freq_slices = [slice(None)] * len(freqs_cis.shape)
-        if seq_dim < len(freqs_cis.shape):
+
+        if len(freqs_cis.shape) <= seq_dim:
+            freqs_chunk = freqs_cis
+        else:
+            freq_slices = [slice(None)] * len(freqs_cis.shape)
             freq_slices[seq_dim] = slice(start_idx, end_idx)
-        freqs_chunk = freqs_cis[tuple(freq_slices)]
+            freqs_chunk = freqs_cis[tuple(freq_slices)]
         
         xq_chunk = xq[tuple(slices)]
         xq_chunk_ = xq_chunk.to(dtype=freqs_cis.dtype).reshape(*xq_chunk.shape[:-1], -1, 1, 2)
