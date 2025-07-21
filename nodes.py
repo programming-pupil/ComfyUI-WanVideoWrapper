@@ -2122,26 +2122,25 @@ class WanVideoSampler:
         for iter_idx in range(iterations): 
             # FreeInit noise reinitialization (after first iteration)
             if freeinit_args is not None and iter_idx > 0:
-                with torch.no_grad():
-                    # restart scheduler for each iteration
-                    sample_scheduler, timesteps = get_scheduler(scheduler, steps, shift, device, transformer.dim, flowedit_args, denoise_strength, sigmas=sigmas)
-    
-                    # Diffuse current latent to t=999
-                    diffuse_timesteps = torch.full((noise.shape[0],), 999, device=device, dtype=torch.long)
-                    z_T = add_noise(
-                        current_latent.to(device),
-                        initial_noise_saved.to(device),
-                        diffuse_timesteps
-                    )
-    
-                    # Generate new random noise
-                    z_rand = torch.randn(z_T.shape, dtype=torch.float32, generator=seed_g, device=torch.device("cpu"))
-    
-                    # Apply frequency mixing
-                    current_latent = freq_mix_3d(z_T.to(torch.float32), z_rand.to(device), LPF=freq_filter)
-                    current_latent = current_latent.to(dtype)
-                    
-                    del z_T, z_rand
+                # restart scheduler for each iteration
+                sample_scheduler, timesteps = get_scheduler(scheduler, steps, shift, device, transformer.dim, flowedit_args, denoise_strength, sigmas=sigmas)
+
+                # Diffuse current latent to t=999
+                diffuse_timesteps = torch.full((noise.shape[0],), 999, device=device, dtype=torch.long)
+                z_T = add_noise(
+                    current_latent.to(device),
+                    initial_noise_saved.to(device),
+                    diffuse_timesteps
+                )
+
+                # Generate new random noise
+                z_rand = torch.randn(z_T.shape, dtype=torch.float32, generator=seed_g, device=torch.device("cpu"))
+
+                # Apply frequency mixing
+                current_latent = freq_mix_3d(z_T.to(torch.float32), z_rand.to(device), LPF=freq_filter)
+                current_latent = current_latent.to(dtype)
+            
+                del z_T, z_rand
 
             if iter_idx > 0:
                 del latent
