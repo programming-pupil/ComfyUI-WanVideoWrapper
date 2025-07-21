@@ -2142,11 +2142,9 @@ class WanVideoSampler:
                     current_latent = current_latent.to(dtype)
                     
                     del z_T, z_rand
-                    torch.cuda.empty_cache()
 
             if iter_idx > 0:
                 del latent
-                torch.cuda.empty_cache()
             
             # Store initial noise for first iteration
             if freeinit_args is not None and iter_idx == 0:
