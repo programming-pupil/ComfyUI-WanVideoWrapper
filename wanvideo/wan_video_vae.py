@@ -740,35 +740,34 @@ class WanVideoVAE(nn.Module):
         values = torch.zeros((1, 3, out_T, H * self.upsampling_factor, W * self.upsampling_factor), dtype=hidden_states.dtype, device=data_device)
 
         batch_size = 4
-        with torch.no_grad():
-            for i in tqdm(range(0, len(tasks), batch_size), desc="VAE decoding"):
-                batch_tasks = tasks[i:i + batch_size]
-                for h, h_, w, w_ in batch_tasks:
-                    hidden_states_batch = hidden_states[:, :, :, h:h_, w:w_].to(computation_device)
-                    hidden_states_batch = self.model.decode(hidden_states_batch, self.scale).to(data_device)
-    
-                    mask = self.build_mask(
-                        hidden_states_batch,
-                        is_bound=(h==0, h_>=H, w==0, w_>=W),
-                        border_width=((size_h - stride_h) * self.upsampling_factor, (size_w - stride_w) * self.upsampling_factor)
-                    ).to(dtype=hidden_states.dtype, device=data_device)
-    
-                    target_h = h * self.upsampling_factor
-                    target_w = w * self.upsampling_factor
-                    values[
-                        :,
-                        :,
-                        :,
-                        target_h:target_h + hidden_states_batch.shape[3],
-                        target_w:target_w + hidden_states_batch.shape[4],
-                    ] += hidden_states_batch * mask
-                    weight[
-                        :,
-                        :,
-                        :,
-                        target_h: target_h + hidden_states_batch.shape[3],
-                        target_w: target_w + hidden_states_batch.shape[4],
-                    ] += mask
+        for i in tqdm(range(0, len(tasks), batch_size), desc="VAE decoding"):
+            batch_tasks = tasks[i:i + batch_size]
+            for h, h_, w, w_ in batch_tasks:
+                hidden_states_batch = hidden_states[:, :, :, h:h_, w:w_].to(computation_device)
+                hidden_states_batch = self.model.decode(hidden_states_batch, self.scale).to(data_device)
+
+                mask = self.build_mask(
+                    hidden_states_batch,
+                    is_bound=(h==0, h_>=H, w==0, w_>=W),
+                    border_width=((size_h - stride_h) * self.upsampling_factor, (size_w - stride_w) * self.upsampling_factor)
+                ).to(dtype=hidden_states.dtype, device=data_device)
+
+                target_h = h * self.upsampling_factor
+                target_w = w * self.upsampling_factor
+                values[
+                    :,
+                    :,
+                    :,
+                    target_h:target_h + hidden_states_batch.shape[3],
+                    target_w:target_w + hidden_states_batch.shape[4],
+                ] += hidden_states_batch * mask
+                weight[
+                    :,
+                    :,
+                    :,
+                    target_h: target_h + hidden_states_batch.shape[3],
+                    target_w: target_w + hidden_states_batch.shape[4],
+                ] += mask
 
         values = values / weight
         values = values.float().clamp_(-1, 1)
