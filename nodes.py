@@ -2648,13 +2648,14 @@ class WanVideoSampler:
                                     source_frame = len(audio_embedding[human_inx])
                                     source_frames.append(source_frame)
                                     if audio_end_idx >= len(audio_embedding[human_inx]):
-                                        miss_length   = audio_end_idx - len(audio_embedding[human_inx]) + 3 
-                                        add_audio_emb = torch.flip(audio_embedding[human_inx][-1*miss_length:], dims=[0])
-                                        audio_embedding[human_inx] = torch.cat([audio_embedding[human_inx], add_audio_emb], dim=0)
+                                        miss_length = min(audio_end_idx - len(audio_embedding[human_inx]) + 3, len(audio_embedding[human_inx]))
+                                        if miss_length > 0:
+                                            add_audio_emb = torch.flip(audio_embedding[human_inx][-miss_length:], dims=[0])
+                                            audio_embedding[human_inx] = torch.cat([audio_embedding[human_inx], add_audio_emb], dim=0)
                                         miss_lengths.append(miss_length)
                                     else:
                                         miss_lengths.append(0)
-                    
+                                        
                     gen_video_samples = torch.cat(gen_video_list, dim=2).to(torch.float32)
                     
                     del noise, latent
